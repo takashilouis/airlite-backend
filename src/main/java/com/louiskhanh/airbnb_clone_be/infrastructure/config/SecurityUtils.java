@@ -20,9 +20,9 @@ import com.louiskhanh.airbnb_clone_be.user.domain.User;
 public class SecurityUtils {
     public static final String ROLE_TENANT = "ROLE_TENANT";
     public static final String ROLE_ADMIN = "ROLE_ADMIN";
-    public static final String CLAIMS_NAMESPACE = "https://louiskhanh.com/roles";    
+    public static final String CLAIMS_NAMESPACE = "https://www.louiskhanh.com/roles";    
 
-    public static User mapOath2AttributesToUser(Map<String, Object> attributes){
+    public static User mapOauth2AttributesToUser(Map<String, Object> attributes){
         User user = new User();
         String sub = String.valueOf(attributes.get("sub"));
         String username = null;
@@ -69,7 +69,7 @@ public class SecurityUtils {
         return mapRolesToGrantedAuthorities(getRolesFromClaims(claims));
     }
 
-    private static List<String> getRolesFromClaims(Map<String, Object> claims){
+    private static Collection<String> getRolesFromClaims(Map<String, Object> claims){
         return (List<String>) claims.get(CLAIMS_NAMESPACE);
     }
 
