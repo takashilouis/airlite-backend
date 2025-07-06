@@ -1,7 +1,10 @@
 package com.louiskhanh.airbnb_clone_be.user.presentation;
 
 import java.text.MessageFormat;
+import java.time.Instant;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -25,8 +28,12 @@ import jakarta.servlet.http.HttpServletRequest;
 @RequestMapping("/api/auth")
 public class AuthResource {
     private final UserService userService;
-
     private final ClientRegistration registration;
+    
+    // Cache to store the last sync time for each user
+    private final Map<String, Instant> lastSyncTimeMap = new ConcurrentHashMap<>();
+    // The minimum time between syncs in minutes (30 minutes to avoid rate limits)
+    private static final long MIN_SYNC_INTERVAL_MINUTES = 30;
 
     public AuthResource(UserService userService, ClientRegistrationRepository registration){
         this.userService = userService;
@@ -35,14 +42,50 @@ public class AuthResource {
 
     @GetMapping("/get-authenticated-user")
     public ResponseEntity<ReadUserDTO> getAuthenticatedUser(@AuthenticationPrincipal OAuth2User user,
-                                                            @RequestParam boolean forceResync){
+                                                            @RequestParam(required = false, defaultValue = "false") boolean forceResync){
         if(user == null){
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         } else {
-            userService.syncWithIdp(user, forceResync);
-            ReadUserDTO connectedUser = userService.getAuthenticatedUserFromSecurityContext();
-            return new ResponseEntity<>(connectedUser, HttpStatus.OK);
+            try {
+                String userEmail = user.getAttribute("email");
+                if (userEmail == null) {
+                    userEmail = user.getAttribute("sub");
+                }
+                
+                boolean shouldSync = forceResync || shouldSyncUser(userEmail);
+                
+                if (shouldSync) {
+                    userService.syncWithIdp(user, forceResync);
+                    // Update the last sync time
+                    lastSyncTimeMap.put(userEmail, Instant.now());
+                }
+                
+                ReadUserDTO connectedUser = userService.getAuthenticatedUserFromSecurityContext();
+                return new ResponseEntity<>(connectedUser, HttpStatus.OK);
+            } catch (Exception e) {
+                // Log the exception
+                System.err.println("Error in getAuthenticatedUser: " + e.getMessage());
+                e.printStackTrace();
+                // Return a user-friendly error
+                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            }
         }
+    }
+    
+    private boolean shouldSyncUser(String userEmail) {
+        if (userEmail == null) {
+            return true;
+        }
+        
+        Instant lastSyncTime = lastSyncTimeMap.get(userEmail);
+        if (lastSyncTime == null) {
+            return true;
+        }
+        
+        Instant now = Instant.now();
+        long minutesSinceLastSync = TimeUnit.SECONDS.toMinutes(now.getEpochSecond() - lastSyncTime.getEpochSecond());
+        
+        return minutesSinceLastSync >= MIN_SYNC_INTERVAL_MINUTES;
     }
     
     @PostMapping("/logout")
@@ -54,5 +97,4 @@ public class AuthResource {
         request.getSession().invalidate();
         return ResponseEntity.ok().body(Map.of("logoutUrl", logoutUrl));
     }
-
 }

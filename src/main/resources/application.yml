@@ -29,6 +29,11 @@ spring:
     properties:
       hibernate:
         default_schema: airbnb_prj
+        hbm2ddl:
+          auto: update
+          create_namespaces: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
   liquibase:
     contexts: dev
     change-log: classpath:db/changelog/master.xml

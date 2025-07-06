@@ -2,9 +2,11 @@ package com.louiskhanh.airbnb_clone_be.infrastructure.config;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -20,6 +22,7 @@ import com.louiskhanh.airbnb_clone_be.user.domain.User;
 public class SecurityUtils {
     public static final String ROLE_TENANT = "ROLE_TENANT";
     public static final String ROLE_ADMIN = "ROLE_ADMIN";
+    public static final String ROLE_LANDLORD = "ROLE_LANDLORD";
     public static final String CLAIMS_NAMESPACE = "https://www.louiskhanh.com/roles";    
 
     public static User mapOauth2AttributesToUser(Map<String, Object> attributes){
@@ -51,18 +54,37 @@ public class SecurityUtils {
             user.setImageUrl((String) attributes.get("picture"));
         }
 
+        Set<Authority> authorities = new HashSet<>();
+        
         if(attributes.get(CLAIMS_NAMESPACE) != null){
-            List<String> authoritiesRaw = (List<String>) attributes.get(CLAIMS_NAMESPACE);
-            Set<Authority> authorities = authoritiesRaw.stream()
-                .map(authority -> {
-                    Authority auth = new Authority();
-                    auth.setName(authority);
-                    return auth;
-                }).collect(Collectors.toSet());    
-            user.setAuthorities(authorities);
+            try {
+                List<String> authoritiesRaw = (List<String>) attributes.get(CLAIMS_NAMESPACE);
+                authorities = authoritiesRaw.stream()
+                    .map(role -> {
+                        Authority auth = new Authority();
+                        // Ensure role starts with ROLE_ prefix
+                        String normalizedRole = role.startsWith("ROLE_") ? role : "ROLE_" + role.toUpperCase();
+                        auth.setName(normalizedRole);
+                        return auth;
+                    }).collect(Collectors.toSet());
+            } catch (Exception e) {
+                System.err.println("Error mapping authorities: " + e.getMessage());
+            }
         }
+        
+        // Add default TENANT role if no roles are specified
+        if (authorities.isEmpty()) {
+            Authority defaultAuth = new Authority();
+            defaultAuth.setName(ROLE_TENANT);
+            authorities.add(defaultAuth);
+        }
+        
+        user.setAuthorities(authorities);
+        
+        // Set a UUID for new users (required field)
+        user.setPublicId(UUID.randomUUID());
+        
         return user;
-    
     }
 
     public static List<SimpleGrantedAuthority> extractAuthorityFromClaims(Map<String, Object> claims){
@@ -70,11 +92,20 @@ public class SecurityUtils {
     }
 
     private static Collection<String> getRolesFromClaims(Map<String, Object> claims){
+        if (claims == null || !claims.containsKey(CLAIMS_NAMESPACE)) {
+            return List.of(); // Empty list if no claims or namespace
+        }
         return (List<String>) claims.get(CLAIMS_NAMESPACE);
     }
 
     private static List<SimpleGrantedAuthority> mapRolesToGrantedAuthorities(Collection<String> roles){
-        return roles.stream().filter(role -> role.startsWith("ROLE_")).map(SimpleGrantedAuthority::new).toList();
+        if (roles == null || roles.isEmpty()) {
+            return List.of(); // Return empty list for null or empty roles
+        }
+        return roles.stream()
+            .map(role -> role.startsWith("ROLE_") ? role : "ROLE_" + role.toUpperCase())
+            .map(SimpleGrantedAuthority::new)
+            .toList();
     }
 
     public static boolean hasCurrentUserAnyOfAuthorities(String ...authorities){

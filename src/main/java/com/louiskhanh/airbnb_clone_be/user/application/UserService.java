@@ -39,25 +39,39 @@ public class UserService {
         return oneByEmail.map(userMapper::readUserDTOToUser);
     }
 
+    @Transactional
     public void syncWithIdp(OAuth2User oAuth2User, boolean forceResync) {
-        Map<String, Object> attributes = oAuth2User.getAttributes();
-        User user = SecurityUtils.mapOauth2AttributesToUser(attributes);
-        Optional<User> existingUser = userRepository.findOneByEmail(user.getEmail());
-        if (existingUser.isPresent()) {
-            if (attributes.get(UPDATED_AT_KEY) != null) {
-                Instant lastModifiedDate = existingUser.orElseThrow().getLastModifiedDate();
-                Instant idpModifiedDate;
-                if (attributes.get(UPDATED_AT_KEY) instanceof Instant instant) {
-                    idpModifiedDate = instant;
+        try {
+            Map<String, Object> attributes = oAuth2User.getAttributes();
+            User user = SecurityUtils.mapOauth2AttributesToUser(attributes);
+            Optional<User> existingUser = userRepository.findOneByEmail(user.getEmail());
+            if (existingUser.isPresent()) {
+                if (attributes.get(UPDATED_AT_KEY) != null) {
+                    Instant lastModifiedDate = existingUser.orElseThrow().getLastModifiedDate();
+                    Instant idpModifiedDate;
+                    if (attributes.get(UPDATED_AT_KEY) instanceof Instant instant) {
+                        idpModifiedDate = instant;
+                    } else {
+                        idpModifiedDate = Instant.ofEpochSecond((Integer) attributes.get(UPDATED_AT_KEY));
+                    }
+                    if (idpModifiedDate.isAfter(lastModifiedDate) || forceResync) {
+                        updateUser(user);
+                    }
                 } else {
-                    idpModifiedDate = Instant.ofEpochSecond((Integer) attributes.get(UPDATED_AT_KEY));
+                    // If no updated_at timestamp, update anyway if forced
+                    if (forceResync) {
+                        updateUser(user);
+                    }
                 }
-                if (idpModifiedDate.isAfter(lastModifiedDate) || forceResync) {
-                    updateUser(user);
-                }
+            } else {
+                // New user, save it
+                userRepository.saveAndFlush(user);
             }
-        } else {
-            userRepository.saveAndFlush(user);
+        } catch (Exception e) {
+            // Log the error
+            System.err.println("Error in syncWithIdp: " + e.getMessage());
+            e.printStackTrace();
+            throw e; // Re-throw to let the controller handle it
         }
     }
 
@@ -70,6 +84,7 @@ public class UserService {
             userToUpdate.setLastName(user.getLastName());
             userToUpdate.setAuthorities(user.getAuthorities());
             userToUpdate.setImageUrl(user.getImageUrl());
+            // Don't update the publicId since it's already set and should be preserved
             userRepository.saveAndFlush(userToUpdate);
         }
     }
