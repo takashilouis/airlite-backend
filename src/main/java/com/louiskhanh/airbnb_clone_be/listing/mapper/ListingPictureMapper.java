@@ -1,15 +1,18 @@
 package com.louiskhanh.airbnb_clone_be.listing.mapper;
 
+import java.util.List;
+import java.util.Set;
+
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.Named;
+
 import com.louiskhanh.airbnb_clone_be.listing.application.dto.sub.PictureDTO;
 import com.louiskhanh.airbnb_clone_be.listing.domain.ListingPicture;
-import java.util.Set;
-import java.util.List;
-import org.mapstruct.Named;
 
 @Mapper(componentModel = "spring")
 public interface ListingPictureMapper{
+    
     @Mapping(target = "listingId", ignore = true)
     @Mapping(target = "listing", ignore = true)
     @Mapping(target = "id", ignore = true)

@@ -15,9 +15,9 @@ import com.louiskhanh.airbnb_clone_be.user.application.dto.ReadUserDTO;
 public class LandlordService {
     private final ListingRepository listingRepository;
     private final ListingMapper listingMapper;
-    private Auth0Service auth0Service;
-    private UserService userService;
-    private PictureService pictureService;
+    private final Auth0Service auth0Service;
+    private final UserService userService;
+    private final PictureService pictureService;
     
     public LandlordService(ListingRepository listingRepository, ListingMapper listingMapper, UserService userService, Auth0Service auth0Service, PictureService pictureService)
     {
