@@ -1,4 +1,4 @@
-# Airbnb Clone Backend
+# Airlite Backend
 
 ## Environment Setup
 
