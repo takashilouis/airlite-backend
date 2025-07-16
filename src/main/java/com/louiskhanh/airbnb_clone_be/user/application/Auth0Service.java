@@ -51,7 +51,8 @@ public class Auth0Service {
         mgmtAPI.roles().assignUsers(roleIdToAdd, List.of(user.getId())).execute();
     }
     private String getAccessToken() throws Auth0Exception{
-        AuthAPI authAPI = AuthAPI.newBuilder(clientId, clientSecret, domain).build();
+        System.out.println("[getAccessToken]domain: " + domain);
+        AuthAPI authAPI = AuthAPI.newBuilder(domain, clientId, clientSecret).build();
         TokenRequest tokenRequest = authAPI.requestToken(domain + "api/v2");
         TokenHolder tokenHolder = tokenRequest.execute().getBody();
         return tokenHolder.getAccessToken();

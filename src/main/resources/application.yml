@@ -10,10 +10,6 @@ spring:
   application:
     name: airbnb-prj-be
   datasource:
-    url: jdbc:postgresql://localhost:5432/postgres
-    username: khanhnguyen
-    password: Louis1210
-    driver-class-name: org.postgresql.Driver
     type: com.zaxxer.hikari.HikariDataSource
     hikari:
       poolName: Hikari
@@ -25,22 +21,18 @@ spring:
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     properties:
       hibernate:
         default_schema: airbnb_prj
-        hbm2ddl:
-          auto: update
-          create_namespaces: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
+  docker:
+    compose:
+      enabled: true
   liquibase:
     contexts: dev
     change-log: classpath:db/changelog/master.xml
     default-schema: airbnb_prj
-    liquibase-schema: airbnb_prj
-    enabled: false
-    drop-first: true
+    enabled: true
   servlet:
     multipart:
       enabled: true

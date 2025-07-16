@@ -5,6 +5,7 @@ import java.util.Set;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -13,7 +14,8 @@ import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMap
 import org.springframework.security.oauth2.core.oidc.user.OidcUserAuthority;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler; 
+
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfiguration {
@@ -21,8 +23,16 @@ public class SecurityConfiguration {
     public SecurityFilterChain configure(HttpSecurity http) throws Exception{
         CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
         requestHandler.setCsrfRequestAttributeName(null);
+        
+        
         http
             .authorizeHttpRequests(authorize -> authorize
+                .requestMatchers(HttpMethod.GET, "api/tenant-listing/get-all-by-category").permitAll()
+                .requestMatchers(HttpMethod.GET, "api/tenant-listing/get-one").permitAll()
+                .requestMatchers(HttpMethod.POST, "api/tenant-listing/search").permitAll()
+                .requestMatchers(HttpMethod.GET, "api/booking/check-availability").permitAll()
+                .requestMatchers(HttpMethod.GET, "api/user-test").permitAll()
+                .requestMatchers(HttpMethod.GET, "assets/*").permitAll()
                 .anyRequest()
                 .authenticated()
             )
@@ -52,11 +62,3 @@ public class SecurityConfiguration {
         };
     }
 }
-
-
-            //.requestMatchers(HttpMethod.GET, "api/tenant-listing/get-all-by-category").permitAll()
-            //.requestMatchers(HttpMethod.GET, "api/tenant-listing/get-one").permitAll()
-            //.requestMatchers(HttpMethod.POST, "api/tenant-listing/search").permitAll()
-            //.requestMatchers(HttpMethod.GET, "api/booking/check-availability").permitAll()
-            //.requestMatchers(HttpMethod.GET, "assets/*").permitAll()
-        

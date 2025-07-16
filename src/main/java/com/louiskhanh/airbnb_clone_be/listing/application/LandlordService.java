@@ -1,5 +1,7 @@
 package com.louiskhanh.airbnb_clone_be.listing.application;
 
+import java.util.UUID;
+
 import org.springframework.stereotype.Service;
 
 import com.louiskhanh.airbnb_clone_be.listing.application.dto.CreatedListingDTO;
@@ -33,6 +35,7 @@ public class LandlordService {
 
         ReadUserDTO userConnected = userService.getAuthenticatedUserFromSecurityContext();
         newListing.setLandlordPublicId(userConnected.publicId());
+        newListing.setPublicId(UUID.randomUUID());
         
         Listing savedListing = listingRepository.saveAndFlush(newListing);
 

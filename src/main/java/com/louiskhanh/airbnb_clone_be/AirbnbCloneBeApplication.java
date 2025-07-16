@@ -15,8 +15,8 @@ public class AirbnbCloneBeApplication {
 
 
 		String url = "jdbc:postgresql://localhost:5432/postgres";
-        String username = "khanhnguyen";
-        String password = "Louis1210";
+        String username = "myuser";
+        String password = "secret";
 
         try (Connection conn = DriverManager.getConnection(url, username, password)) {
             System.out.println("Connected to PostgreSQL successfully!");
