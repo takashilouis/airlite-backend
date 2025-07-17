@@ -2,10 +2,13 @@ package com.louiskhanh.airbnb_clone_be.listing.mapper;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.springframework.jmx.export.annotation.ManagedOperationParameter;
 
-import com.louiskhanh.airbnb_clone_be.listing.application.dto.CreatedListingDTO;
-import com.louiskhanh.airbnb_clone_be.listing.application.dto.SaveListingDTO;
+import com.louiskhanh.airbnb_clone_be.listing.application.dto.*;
+
+import com.louiskhanh.airbnb_clone_be.listing.application.dto.vo.PriceVO;
 import com.louiskhanh.airbnb_clone_be.listing.domain.Listing;
+import java.util.List;
 
 @Mapper(componentModel = "spring", uses = {ListingPictureMapper.class})
 public interface ListingMapper {
@@ -27,4 +30,15 @@ public interface ListingMapper {
     Listing saveListingDTOToListing(SaveListingDTO saveListingDTO);
 
     CreatedListingDTO listingToCreatedListingDTO(Listing listing);
+    
+    @Mapping(target = "cover", source = "pictures")
+    List<DisplayCardListingDTO> listingToDisplayCardListingDTOs(List<Listing> listings);
+
+    @Mapping(target = "cover", source = "pictures", qualifiedByName = "extract-cover")
+    DisplayCardListingDTO listingToDisplayCardListingDTO(Listing listing);
+
+    default PriceVO mapPriceToPriceVO(int price) {
+        return new PriceVO(price);
+    }
+
 }

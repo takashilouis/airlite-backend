@@ -12,6 +12,11 @@ import com.louiskhanh.airbnb_clone_be.listing.repository.ListingRepository;
 import com.louiskhanh.airbnb_clone_be.user.application.Auth0Service;
 import com.louiskhanh.airbnb_clone_be.user.application.UserService;
 import com.louiskhanh.airbnb_clone_be.user.application.dto.ReadUserDTO;
+import java.util.List;
+import org.springframework.transaction.annotation.Transactional;
+import com.louiskhanh.airbnb_clone_be.listing.application.dto.DisplayCardListingDTO;
+import com.louiskhanh.airbnb_clone_be.sharedkernel.service.State;
+
 
 @Service
 public class LandlordService {
@@ -35,7 +40,7 @@ public class LandlordService {
 
         ReadUserDTO userConnected = userService.getAuthenticatedUserFromSecurityContext();
         newListing.setLandlordPublicId(userConnected.publicId());
-        newListing.setPublicId(UUID.randomUUID());
+        //newListing.setPublicId(UUID.randomUUID());
         
         Listing savedListing = listingRepository.saveAndFlush(newListing);
 
@@ -44,5 +49,21 @@ public class LandlordService {
         auth0Service.addLandlordRoleToUser(userConnected);
 
         return listingMapper.listingToCreatedListingDTO(savedListing);
+    }
+
+    @Transactional(readOnly = true)
+    public List<DisplayCardListingDTO> getAllProperties(ReadUserDTO landlord) {
+        List<Listing> properties = listingRepository.findAllByLandlordPublicIdFetchCoverPicture(landlord.publicId());
+        return listingMapper.listingToDisplayCardListingDTOs(properties);
+    }
+
+    @Transactional
+    public State<UUID, String> delete(UUID publicId, ReadUserDTO landlord) {
+        long deletedSuccessfuly = listingRepository.deleteByPublicIdAndLandlordPublicId(publicId, landlord.publicId());
+        if (deletedSuccessfuly > 0) {
+            return State.<UUID, String>builder().forSuccess(publicId);
+        } else {
+            return State.<UUID, String>builder().forUnauthorized("User not authorized to delete this listing");
+        }
     }
 }
