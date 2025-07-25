@@ -1,14 +1,17 @@
 package com.louiskhanh.airbnb_clone_be.listing.mapper;
 
+import java.util.List;
+
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.springframework.jmx.export.annotation.ManagedOperationParameter;
 
-import com.louiskhanh.airbnb_clone_be.listing.application.dto.*;
-
+import com.louiskhanh.airbnb_clone_be.listing.application.dto.CreatedListingDTO;
+import com.louiskhanh.airbnb_clone_be.listing.application.dto.DisplayCardListingDTO;
+import com.louiskhanh.airbnb_clone_be.listing.application.dto.DisplayListingDTO;
+import com.louiskhanh.airbnb_clone_be.listing.application.dto.ListingCreateBookingDTO;
+import com.louiskhanh.airbnb_clone_be.listing.application.dto.SaveListingDTO;
 import com.louiskhanh.airbnb_clone_be.listing.application.dto.vo.PriceVO;
 import com.louiskhanh.airbnb_clone_be.listing.domain.Listing;
-import java.util.List;
 
 @Mapper(componentModel = "spring", uses = {ListingPictureMapper.class})
 public interface ListingMapper {
@@ -41,4 +44,17 @@ public interface ListingMapper {
         return new PriceVO(price);
     }
 
+    @Mapping(target = "landlord", ignore = true)
+    @Mapping(target = "description.title.value", source = "title")
+    @Mapping(target = "description.description.value", source = "description")
+    @Mapping(target = "infos.bedrooms.value", source = "bedrooms")
+    @Mapping(target = "infos.guests.value", source = "guests")
+    @Mapping(target = "infos.beds.value", source = "beds")
+    @Mapping(target = "infos.baths.value", source = "bathrooms")
+    @Mapping(target = "category", source = "bookingCategory")
+    @Mapping(target = "price.value", source = "price")
+    DisplayListingDTO listingToDisplayListingDTO(Listing listing);
+
+    @Mapping(target = "listingPublicId", source = "publicId")
+    ListingCreateBookingDTO mapListingToListingCreateBookingDTO(Listing listing);
 }

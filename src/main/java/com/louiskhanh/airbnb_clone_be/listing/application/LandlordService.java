@@ -1,22 +1,23 @@
 package com.louiskhanh.airbnb_clone_be.listing.application;
 
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.louiskhanh.airbnb_clone_be.listing.application.dto.CreatedListingDTO;
+import com.louiskhanh.airbnb_clone_be.listing.application.dto.DisplayCardListingDTO;
+import com.louiskhanh.airbnb_clone_be.listing.application.dto.ListingCreateBookingDTO;
 import com.louiskhanh.airbnb_clone_be.listing.application.dto.SaveListingDTO;
 import com.louiskhanh.airbnb_clone_be.listing.domain.Listing;
 import com.louiskhanh.airbnb_clone_be.listing.mapper.ListingMapper;
 import com.louiskhanh.airbnb_clone_be.listing.repository.ListingRepository;
+import com.louiskhanh.airbnb_clone_be.sharedkernel.service.State;
 import com.louiskhanh.airbnb_clone_be.user.application.Auth0Service;
 import com.louiskhanh.airbnb_clone_be.user.application.UserService;
 import com.louiskhanh.airbnb_clone_be.user.application.dto.ReadUserDTO;
-import java.util.List;
-import org.springframework.transaction.annotation.Transactional;
-import com.louiskhanh.airbnb_clone_be.listing.application.dto.DisplayCardListingDTO;
-import com.louiskhanh.airbnb_clone_be.sharedkernel.service.State;
-
 
 @Service
 public class LandlordService {
@@ -40,7 +41,7 @@ public class LandlordService {
 
         ReadUserDTO userConnected = userService.getAuthenticatedUserFromSecurityContext();
         newListing.setLandlordPublicId(userConnected.publicId());
-        //newListing.setPublicId(UUID.randomUUID());
+        newListing.setPublicId(UUID.randomUUID());
         
         Listing savedListing = listingRepository.saveAndFlush(newListing);
 
@@ -66,4 +67,22 @@ public class LandlordService {
             return State.<UUID, String>builder().forUnauthorized("User not authorized to delete this listing");
         }
     }
+
+    public Optional<ListingCreateBookingDTO> getByListingPublicId(UUID publicId) {
+        return listingRepository.findByPublicId(publicId).map(listingMapper::mapListingToListingCreateBookingDTO);
+    }
+
+    public List<DisplayCardListingDTO> getCardDisplayByListingPublicId(List<UUID> allListingPublicIDs) {
+        return listingRepository.findAllByPublicIdIn(allListingPublicIDs)
+                .stream()
+                .map(listingMapper::listingToDisplayCardListingDTO)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<DisplayCardListingDTO> getByPublicIdAndLandlordPublicId(UUID listingPublicId, UUID landlordPublicId) {
+        return listingRepository.findOneByPublicIdAndLandlordPublicId(listingPublicId, landlordPublicId)
+                .map(listingMapper::listingToDisplayCardListingDTO);
+    }
+
 }
