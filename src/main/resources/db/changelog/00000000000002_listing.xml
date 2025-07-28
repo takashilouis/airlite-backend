@@ -55,6 +55,11 @@
                                  referencedTableName="airbnb_user" validate="true"/>
     </changeSet>
 
+    <!-- New changeset to increase description column size -->
+    <changeSet id="00000000000002-update-description-length" author="louiskhanh">
+        <modifyDataType tableName="listing" columnName="description" newDataType="varchar(512)"/>
+    </changeSet>
+
     <changeSet id="00000000000002-seq-picture" author="louiskhanh">
         <createSequence sequenceName="listing_picture_generator" startValue="1" incrementBy="1"/>
     </changeSet>
